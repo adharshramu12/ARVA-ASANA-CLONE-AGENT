@@ -24,7 +24,28 @@ export function sanitizeHtml(html: string | null | undefined): string {
     `action="#"`
   );
 
-  // 4) Remove any full-screen loading overlays that may block scroll.
+  // 4) Remove broken HTML fragments that create garbage text
+  //    Remove any raw text starting with ass=" or containing orphan attributes
+  out = out.replace(/ass="[^"]*"/g, "");
+  out = out.replace(/\bass=["'][^"']*["']/g, "");
+  
+  // 5) Remove problematic class patterns that appear as text nodes
+  const problematicPatterns = [
+    /ThemeableCardPresentation--isValid/g,
+    /ThemeableCardPresentation(?!\w)/g,
+    /CalloutCard/g,
+    /TrialCalloutCard/g,
+    /HighlightSol--buildingBlock/g,
+    /HighlightSol(?!\w)/g,
+    /Stack--display-block/g,
+    /Stack--direction-column/g
+  ];
+  
+  problematicPatterns.forEach(pattern => {
+    out = out.replace(pattern, "");
+  });
+
+  // 6) Remove any full-screen loading overlays that may block scroll.
   //    Remove elements with these classes: loading-screen, spinner, overlay, blocking-layer
   out = out.replace(
     /<div[^>]+class="[^"]*(?:loading-screen|spinner|overlay|blocking-layer)[^"]*"[\s\S]*?<\/div>/gi,
@@ -34,6 +55,25 @@ export function sanitizeHtml(html: string | null | undefined): string {
     /<div[^>]+class="[^"]*[^"]*(?:loading-screen|spinner|overlay|blocking-layer)[^"]*"[\s\S]*?<\/div>/gi,
     ""
   );
+
+  // 7) Remove invisible blocking overlays and problematic wrapper classes
+  const removeClasses = [
+    'overlay',
+    'intercept-layer',
+    'ThemeableCardPresentation--isValid',
+    'stack-root',
+    'portal-layer'
+  ];
+  
+  removeClasses.forEach(className => {
+    const regex = new RegExp(`<div[^>]+class="[^"]*\\b${className}\\b[^"]*"[^>]*>([\\s\\S]*?)<\\/div>`, 'gi');
+    out = out.replace(regex, '$1'); // Keep inner content, remove wrapper
+  });
+
+  // 8) Clean up any malformed HTML attributes or orphan text nodes
+  out = out.replace(/\s+class=""\s*/g, ' ');
+  out = out.replace(/\s+style=""\s*/g, ' ');
+  out = out.replace(/\s{2,}/g, ' ');
 
   return out;
 }

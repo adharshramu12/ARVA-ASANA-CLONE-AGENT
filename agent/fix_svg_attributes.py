@@ -119,10 +119,14 @@ def fix_svg_attributes_in_html(html_content):
     
     return html_content
 
-def fix_jsx_svg_attributes(file_name):
-    """Fix SVG attributes in a JSX file"""
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(script_dir, "..", "frontend", "generated", file_name)
+def fix_svg_attributes(file_path):
+    """Fix SVG attributes in a JSX file - standalone function for pipeline use"""
+    import os
+    import re
+    
+    if not os.path.exists(file_path):
+        print(f"[ERROR] File not found: {file_path}")
+        return False
     
     print(f"[INFO] Reading {file_path}...")
     with open(file_path, "r", encoding="utf-8") as f:
@@ -308,6 +312,12 @@ def fix_jsx_svg_attributes(file_name):
         print(f"[SUCCESS] Fixed SVG attributes in {file_path}")
     else:
         print("[INFO] No SVG attributes needed fixing")
+
+def fix_jsx_svg_attributes(file_name):
+    """Fix SVG attributes in a JSX file (wrapper for backward compatibility)"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(script_dir, "..", "frontend", "generated", file_name)
+    return fix_svg_attributes(file_path)
 
 def fix_all_svg_attributes():
     """Fix SVG attributes in all generated JSX files"""
